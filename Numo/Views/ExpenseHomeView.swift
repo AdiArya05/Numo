@@ -10,19 +10,12 @@ struct ExpenseHomeView: View {
     @Namespace private var periodSelectionGlass
 
     private var visibleTransactions: [TransactionItem] {
-        let kind: EntryKind = ledgerMode == .income ? .income : .expense
-        return Array(transactions.filter { $0.kind == kind }.prefix(4))
+        Array(transactions.filter { $0.kind == .expense }.prefix(4))
     }
 
     private var expenditure: Decimal {
         transactions
             .filter { $0.kind == .expense }
-            .reduce(Decimal.zero) { $0 + $1.amount }
-    }
-
-    private var income: Decimal {
-        transactions
-            .filter { $0.kind == .income }
             .reduce(Decimal.zero) { $0 + $1.amount }
     }
 
@@ -49,12 +42,14 @@ struct ExpenseHomeView: View {
                                 }
                             }
                             .transition(.opacity)
+                            .zIndex(1)
 
                         AddActionMenu(onSelect: onSelectEntry)
                             .padding(.trailing, 24)
                             .padding(.bottom, max(proxy.safeAreaInsets.bottom, 12) + 72)
                             .frame(maxWidth: .infinity, alignment: .trailing)
                             .transition(.scale(scale: 0.82, anchor: .bottomTrailing).combined(with: .opacity))
+                            .zIndex(2)
                     }
 
                     HomeNavigationBar(
@@ -62,6 +57,7 @@ struct ExpenseHomeView: View {
                         isAddMenuPresented: $isAddMenuPresented,
                         bottomInset: max(proxy.safeAreaInsets.bottom, 10)
                     )
+                    .zIndex(3)
                 }
             }
             .toolbar(.hidden, for: .navigationBar)
@@ -80,7 +76,7 @@ struct ExpenseHomeView: View {
     }
 
     private func homeContent(bottomInset: CGFloat) -> some View {
-        VStack(spacing: 13) {
+        VStack(spacing: 15) {
             periodPicker
             expenditureAmount
             RecentActivityCard(
@@ -135,22 +131,19 @@ struct ExpenseHomeView: View {
     }
 
     private var expenditureAmount: some View {
-        Text(ledgerMode == .expenses ? formattedExpenditure : formattedIncome)
-            .font(.system(size: 60, weight: .bold, design: .default))
+        Text(formattedExpenditure)
+            .font(.system(size: 66, weight: .bold, design: .default))
             .minimumScaleFactor(0.65)
             .lineLimit(1)
             .contentTransition(.numericText())
             .frame(maxWidth: .infinity)
-            .frame(height: 72)
-            .accessibilityLabel(ledgerMode == .expenses ? "Total expenditure \(formattedExpenditure)" : "Total income \(formattedIncome)")
+            .frame(height: 82)
+            .padding(.bottom, 6)
+            .accessibilityLabel("Total expenditure \(formattedExpenditure)")
     }
 
     private var formattedExpenditure: String {
         formatted(expenditure)
-    }
-
-    private var formattedIncome: String {
-        formatted(income)
     }
 
     private func formatted(_ amount: Decimal) -> String {
@@ -166,7 +159,6 @@ struct ExpenseHomeView: View {
             NavigationLink(value: SummaryDestination.recurring) {
                 CompactSummaryCard(
                     title: "Recurring Expenses",
-                    accent: NumoTheme.recurring,
                     items: [
                         .init(emoji: "☁️", title: "iCloud+", detail: "$3.99"),
                         .init(emoji: "🎵", title: "Spotify", detail: "$12.99"),
@@ -179,7 +171,6 @@ struct ExpenseHomeView: View {
             NavigationLink(value: SummaryDestination.categories) {
                 CompactSummaryCard(
                     title: "Top Categories",
-                    accent: NumoTheme.categories,
                     items: [
                         .init(emoji: "🏠", title: "Housing", detail: "$299.99"),
                         .init(emoji: "🥼", title: "Shopping", detail: "$49.90"),
@@ -207,7 +198,7 @@ private struct RecentActivityCard: View {
                 .frame(height: 1)
                 .padding(.bottom, 15)
 
-            VStack(spacing: 10) {
+            VStack(spacing: 8) {
                 ForEach(transactions) { transaction in
                     Button {
                         onSelect(transaction)
@@ -218,9 +209,9 @@ private struct RecentActivityCard: View {
                 }
             }
         }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 18)
-        .frame(height: 278)
+        .padding(.horizontal, 22)
+        .padding(.vertical, 20)
+        .frame(height: 300)
         .numoCard(cornerRadius: 36)
     }
 }
@@ -244,10 +235,10 @@ private struct TransactionRow: View {
     let transaction: TransactionItem
 
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 14) {
             Text(transaction.emoji)
-                .font(.body)
-                .frame(width: 40, height: 40)
+                .font(.title3)
+                .frame(width: 46, height: 46)
                 .background(categoryColor.opacity(0.36), in: Circle())
                 .overlay {
                     Circle().stroke(Color.white.opacity(0.40), lineWidth: 0.7)
@@ -255,92 +246,98 @@ private struct TransactionRow: View {
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(transaction.title)
-                    .font(.subheadline.bold())
+                    .font(.headline.bold())
                     .lineLimit(1)
                     .minimumScaleFactor(0.78)
 
                 Text(transaction.timestamp)
-                    .font(.caption.bold())
+                    .font(.subheadline.bold())
                     .foregroundStyle(NumoTheme.secondaryText)
             }
 
             Spacer(minLength: 6)
 
             Text(transaction.signedAmount)
-                .font(.subheadline.bold())
+                .font(.headline.bold())
                 .monospacedDigit()
                 .foregroundStyle(transaction.kind == .income ? NumoTheme.mint : .white)
         }
     }
 
     private var categoryColor: Color {
-        switch transaction.category {
-        case "Food": Color.yellow
-        case "Shopping": Color.gray
-        case "Housing": Color.teal
-        default: Color.cyan
-        }
+        NumoTheme.categoryColor(transaction.category)
     }
 }
 
 private struct CompactSummaryCard: View {
     let title: String
-    let accent: Color
     let items: [CompactStat]
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text(title)
-                .font(.caption.bold())
+                .font(.subheadline.bold())
                 .lineLimit(1)
-                .minimumScaleFactor(0.72)
-                .padding(.bottom, 10)
+                .minimumScaleFactor(0.76)
+                .padding(.bottom, 12)
 
             Rectangle()
                 .fill(NumoTheme.divider)
                 .frame(height: 1)
-                .padding(.bottom, 12)
+                .padding(.bottom, 13)
 
-            VStack(spacing: 11) {
+            VStack(spacing: 12) {
                 ForEach(items) { item in
-                    HStack(spacing: 7) {
+                    HStack(spacing: 8) {
                         Text(item.emoji)
-                            .font(.footnote)
+                            .font(.subheadline)
+                            .frame(width: 28, height: 28)
+                            .background(itemColor(item.title).opacity(0.28), in: Circle())
 
-                        Text(item.title)
-                            .font(.caption.bold())
-                            .lineLimit(1)
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(item.title)
+                                .font(.subheadline.bold())
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.78)
 
-                        Spacer(minLength: 2)
+                            Text(item.detail)
+                                .font(.caption.bold())
+                                .foregroundStyle(Color.white.opacity(0.62))
+                                .monospacedDigit()
+                        }
 
-                        Text(item.detail)
-                            .font(.caption2.bold())
-                            .foregroundStyle(Color.white.opacity(0.76))
-                            .monospacedDigit()
+                        Spacer(minLength: 0)
                     }
                 }
             }
         }
-        .padding(17)
+        .padding(18)
         .frame(maxWidth: .infinity, alignment: .topLeading)
-        .frame(height: 150, alignment: .topLeading)
-        .background(
-            LinearGradient(
-                colors: [accent.opacity(0.18), NumoTheme.surface],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            ),
+        .frame(height: 200, alignment: .topLeading)
+        .background(NumoTheme.surface, in: RoundedRectangle(cornerRadius: 28, style: .continuous))
+        .glassEffect(
+            .regular.tint(Color.white.opacity(0.035)).interactive(),
             in: RoundedRectangle(cornerRadius: 28, style: .continuous)
         )
         .overlay {
             RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .stroke(accent.opacity(0.46), lineWidth: 0.9)
+                .stroke(NumoTheme.border, lineWidth: 0.8)
         }
         .overlay(alignment: .topTrailing) {
             Image(systemName: "chevron.right")
                 .font(.caption.bold())
-                .foregroundStyle(accent)
+                .foregroundStyle(Color.white.opacity(0.68))
                 .padding(16)
         }
+    }
+
+    private func itemColor(_ title: String) -> Color {
+        let categoryNames = [
+            "Housing", "Food", "Shopping", "Subscriptions",
+            "Transport", "Entertainment", "Health"
+        ]
+        return categoryNames.contains(title)
+            ? NumoTheme.categoryColor(title)
+            : NumoTheme.recurring
     }
 }

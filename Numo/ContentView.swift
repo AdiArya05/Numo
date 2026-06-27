@@ -23,13 +23,8 @@ struct ContentView: View {
     }
 
     private func openEntry(_ kind: EntryKind) {
-        withAnimation(.snappy(duration: 0.26)) {
-            isAddMenuPresented = false
-        }
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.18) {
-            activeEntry = kind
-        }
+        isAddMenuPresented = false
+        activeEntry = kind
     }
 
     private func addEntry(_ draft: NewTransactionDraft) {

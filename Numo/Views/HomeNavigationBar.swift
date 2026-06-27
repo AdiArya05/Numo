@@ -12,8 +12,9 @@ struct HomeNavigationBar: View {
                 HStack(spacing: 0) {
                     ForEach(LedgerMode.allCases) { mode in
                         Button {
+                            guard mode == .expenses else { return }
                             withAnimation(.snappy(duration: 0.24)) {
-                                selectedMode = mode
+                                selectedMode = .expenses
                                 isAddMenuPresented = false
                             }
                         } label: {
@@ -44,6 +45,7 @@ struct HomeNavigationBar: View {
                         }
                         .buttonStyle(.plain)
                         .accessibilityAddTraits(selectedMode == mode ? .isSelected : [])
+                        .accessibilityHint(mode == .income ? "Income dashboard is coming later" : "")
                     }
                 }
                 .frame(width: 208, height: 54)
@@ -103,6 +105,8 @@ struct AddActionMenu: View {
                         Circle().stroke(color.opacity(0.25), lineWidth: 0.7)
                     }
             }
+            .frame(minHeight: 62)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Add \(kind.rawValue.lowercased())")

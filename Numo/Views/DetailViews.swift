@@ -82,18 +82,13 @@ struct TransactionDetailSheet: View {
     }
 
     private var categoryColor: Color {
-        switch transaction.category {
-        case "Food": .yellow
-        case "Shopping": .gray
-        case "Housing": .teal
-        case "Subscriptions": NumoTheme.recurring
-        default: NumoTheme.activity
-        }
+        NumoTheme.categoryColor(transaction.category)
     }
 }
 
 struct SummaryDetailView: View {
     let destination: SummaryDestination
+    @State private var selectedCategoryName = "Housing"
 
     private var accent: Color {
         destination == .recurring ? NumoTheme.recurring : NumoTheme.categories
@@ -190,58 +185,127 @@ struct SummaryDetailView: View {
             NumoTheme.background
                 .ignoresSafeArea()
 
-            VStack(alignment: .leading, spacing: 26) {
-                Text("$405.36 spent")
-                    .font(.title3.bold())
-                    .foregroundStyle(Color.white.opacity(0.64))
+            ScrollView {
+                VStack(alignment: .leading, spacing: 22) {
+                    Text("$1,000 spent")
+                        .font(.title2.bold())
+                        .foregroundStyle(Color.white.opacity(0.68))
 
-                CategoryCoinChart(categories: coinCategories)
-                    .frame(height: 150)
+                    CategoryCoinChart(
+                        categories: coinCategories,
+                        selectedName: selectedCategoryName,
+                        onSelect: selectCategory
+                    )
+                    .frame(height: 210)
 
-                LazyVGrid(
-                    columns: [
-                        GridItem(.flexible(), spacing: 18),
-                        GridItem(.flexible(), spacing: 18)
-                    ],
-                    alignment: .leading,
-                    spacing: 18
-                ) {
-                    ForEach(coinCategories) { category in
-                        HStack(alignment: .top, spacing: 9) {
+                    if let selectedCategory {
+                        HStack(spacing: 14) {
                             Capsule()
-                                .fill(category.color)
-                                .frame(width: 7, height: 18)
+                                .fill(selectedCategory.color)
+                                .frame(width: 10, height: 38)
 
-                            VStack(alignment: .leading, spacing: 3) {
-                                Text(category.name)
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(selectedCategory.name)
+                                    .font(.headline.bold())
+
+                                Text("\(selectedCategory.percent)% of total spending")
                                     .font(.subheadline.bold())
-
-                                Text("\(category.amount) · \(category.percent)%")
-                                    .font(.caption.bold())
                                     .foregroundStyle(NumoTheme.secondaryText)
                             }
+
+                            Spacer()
+
+                            Text(selectedCategory.amount)
+                                .font(.title3.bold())
+                                .monospacedDigit()
+                        }
+                        .padding(17)
+                        .glassEffect(
+                            .regular.tint(selectedCategory.color.opacity(0.14)),
+                            in: RoundedRectangle(cornerRadius: 24, style: .continuous)
+                        )
+                    }
+
+                    LazyVGrid(
+                        columns: [
+                            GridItem(.flexible(), spacing: 14),
+                            GridItem(.flexible(), spacing: 14)
+                        ],
+                        alignment: .leading,
+                        spacing: 12
+                    ) {
+                        ForEach(coinCategories) { category in
+                            Button {
+                                selectCategory(category)
+                            } label: {
+                                HStack(alignment: .center, spacing: 10) {
+                                    Capsule()
+                                        .fill(category.color)
+                                        .frame(width: 8, height: 30)
+
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text(category.name)
+                                            .font(.subheadline.bold())
+                                            .lineLimit(1)
+
+                                        Text("\(category.amount) · \(category.percent)%")
+                                            .font(.caption.bold())
+                                            .foregroundStyle(NumoTheme.secondaryText)
+                                            .lineLimit(1)
+                                    }
+
+                                    Spacer(minLength: 0)
+                                }
+                                .padding(12)
+                                .frame(maxWidth: .infinity, minHeight: 62, alignment: .leading)
+                                .background(
+                                    Color.white.opacity(selectedCategoryName == category.name ? 0.08 : 0.035),
+                                    in: RoundedRectangle(cornerRadius: 18, style: .continuous)
+                                )
+                                .overlay {
+                                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                                        .stroke(
+                                            selectedCategoryName == category.name
+                                                ? category.color.opacity(0.62)
+                                                : Color.white.opacity(0.10),
+                                            lineWidth: 0.8
+                                        )
+                                }
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel("\(category.name), \(category.amount), \(category.percent) percent")
                         }
                     }
                 }
-
-                Spacer()
+                .padding(.horizontal, 22)
+                .padding(.top, 12)
+                .padding(.bottom, 24)
             }
-            .padding(.horizontal, 22)
-            .padding(.top, 12)
+            .scrollIndicators(.hidden)
         }
     }
 
     private var coinCategories: [CoinCategory] {
         [
-            .init(name: "Housing", amount: "$299.99", percent: 74, color: .cyan, thickness: 68),
-            .init(name: "Shopping", amount: "$49.90", percent: 12, color: .green, thickness: 40),
-            .init(name: "Subscriptions", amount: "$29.99", percent: 7, color: .pink, thickness: 32),
-            .init(name: "Food", amount: "$8.50", percent: 2, color: .yellow, thickness: 24),
-            .init(name: "Transport", amount: "$7.00", percent: 2, color: .orange, thickness: 22),
-            .init(name: "Entertainment", amount: "$5.00", percent: 1, color: .purple, thickness: 20),
-            .init(name: "Health", amount: "$3.00", percent: 1, color: .mint, thickness: 18),
-            .init(name: "Other", amount: "$1.98", percent: 1, color: .indigo, thickness: 18)
+            .init(name: "Housing", amount: "$299.99", percent: 30, color: NumoTheme.categoryColor("Housing"), thickness: 72),
+            .init(name: "Shopping", amount: "$49.90", percent: 5, color: NumoTheme.categoryColor("Shopping"), thickness: 44),
+            .init(name: "Subscriptions", amount: "$29.99", percent: 3, color: NumoTheme.categoryColor("Subscriptions"), thickness: 36),
+            .init(name: "Food", amount: "$8.50", percent: 1, color: NumoTheme.categoryColor("Food"), thickness: 28),
+            .init(name: "Transport", amount: "$0.00", percent: 0, color: NumoTheme.categoryColor("Transport"), thickness: 22),
+            .init(name: "Entertainment", amount: "$0.00", percent: 0, color: NumoTheme.categoryColor("Entertainment"), thickness: 22),
+            .init(name: "Health", amount: "$0.00", percent: 0, color: NumoTheme.categoryColor("Health"), thickness: 22),
+            .init(name: "Other", amount: "$611.62", percent: 61, color: NumoTheme.categoryColor("Other"), thickness: 92)
         ]
+    }
+
+    private var selectedCategory: CoinCategory? {
+        coinCategories.first { $0.name == selectedCategoryName }
+    }
+
+    private func selectCategory(_ category: CoinCategory) {
+        withAnimation(.spring(response: 0.34, dampingFraction: 0.78)) {
+            selectedCategoryName = category.name
+        }
     }
 
     private var summaryHeader: some View {
@@ -271,15 +335,25 @@ struct SummaryDetailView: View {
 
 private struct CategoryCoinChart: View {
     let categories: [CoinCategory]
+    let selectedName: String
+    let onSelect: (CoinCategory) -> Void
 
     var body: some View {
         GeometryReader { proxy in
-            HStack(spacing: -5) {
+            HStack(spacing: -7) {
                 ForEach(categories) { category in
-                    SpendingCoin(
-                        color: category.color,
-                        thickness: category.thickness
-                    )
+                    Button {
+                        onSelect(category)
+                    } label: {
+                        SpendingCoin(
+                            color: category.color,
+                            thickness: category.thickness,
+                            isSelected: selectedName == category.name
+                        )
+                    }
+                    .buttonStyle(.plain)
+                    .contentShape(Rectangle())
+                    .accessibilityLabel("\(category.name), \(category.amount), \(category.percent) percent")
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -299,14 +373,14 @@ private struct CategoryCoinChart: View {
                     .blur(radius: 20)
             }
         }
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Spending by category shown as weighted coins")
+        .accessibilityElement(children: .contain)
     }
 }
 
 private struct SpendingCoin: View {
     let color: Color
     let thickness: CGFloat
+    let isSelected: Bool
 
     var body: some View {
         ZStack(alignment: .trailing) {
@@ -332,13 +406,16 @@ private struct SpendingCoin: View {
                 .frame(width: 13)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .frame(width: thickness, height: 58)
-        .shadow(color: color.opacity(0.30), radius: 11, y: 8)
+        .frame(width: thickness, height: 72)
+        .scaleEffect(isSelected ? 1.08 : 1)
+        .offset(y: isSelected ? -7 : 0)
+        .shadow(color: color.opacity(isSelected ? 0.62 : 0.30), radius: isSelected ? 18 : 11, y: 8)
+        .animation(.spring(response: 0.34, dampingFraction: 0.78), value: isSelected)
     }
 }
 
 private struct CoinCategory: Identifiable {
-    let id = UUID()
+    var id: String { name }
     let name: String
     let amount: String
     let percent: Int

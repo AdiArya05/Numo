@@ -12,6 +12,27 @@ enum NumoTheme {
     static let recurring = Color(red: 0.31, green: 0.78, blue: 0.94)
     static let categories = Color(red: 0.72, green: 0.48, blue: 1.0)
     static let activity = Color(red: 1.0, green: 0.70, blue: 0.25)
+
+    static func categoryColor(_ category: String) -> Color {
+        switch category {
+        case "Housing":
+            Color(red: 0.22, green: 0.72, blue: 0.78)
+        case "Food":
+            Color(red: 0.94, green: 0.76, blue: 0.20)
+        case "Shopping":
+            Color(red: 0.72, green: 0.55, blue: 0.92)
+        case "Subscriptions":
+            Color(red: 0.35, green: 0.72, blue: 0.95)
+        case "Transport":
+            Color(red: 0.98, green: 0.53, blue: 0.24)
+        case "Entertainment":
+            Color(red: 0.95, green: 0.38, blue: 0.62)
+        case "Health":
+            Color(red: 0.30, green: 0.84, blue: 0.56)
+        default:
+            Color(red: 0.48, green: 0.52, blue: 0.90)
+        }
+    }
 }
 
 extension View {
